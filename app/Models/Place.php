@@ -12,6 +12,7 @@ class Place extends Model
     protected $fillable = [
         'name',
         'description',
+        'address',
         'latitude',
         'longitude',
         'file_id',
@@ -37,14 +38,30 @@ class Place extends Model
     {
         return $this->belongsToMany(User::class, 'favorites');
     }
-    public function visibility()
+    
+    public function favoritedByUser(User $user)
+    {
+        $count = Favorite::where([
+            ['user_id',  '=', $user->id],
+            ['place_id', '=', $this->id],
+        ])->count();
+
+        return $count > 0;
+    }
+
+    public function favoritedByAuthUser()
+    {
+        $user = auth()->user();
+        return $this->favoritedByUser($user);
+    }
+    /*public function visibility()
     {
         return $this->belongsTo(visibility::class);
     }
     public function reviews()
     {
         return $this->hasMany(Review::class);
-    }
+    }*/
 
 }
 

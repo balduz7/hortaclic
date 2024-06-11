@@ -1,20 +1,34 @@
-
 @extends('layouts.app')
-@section("content")
 
-<form id="create-file-form" method="post" action="{{ route('files.store') }}" enctype="multipart/form-data" class="bg-white p-8 rounded shadow-md">
-    @csrf
+@section('box-title')
+    {{ __('Add file') }}
+@endsection
+
+@section('box-content')
+    <form method="POST" action="{{ route('files.store') }}" enctype="multipart/form-data">
+        @csrf
+        <div>
+            <x-input-label for="upload" :value="__('Upload')" />
+            <x-text-input type="file" name="upload" id="upload" class="block mt-1 w-full" :value="old('upload')" />
+            <div class="block mt-1 w-full">{{ __('Size') }}: <span id="filesize">???</span> KB</div>
+        </div>
+        <div class="mt-8">
+            <x-primary-button>
+                {{ __('Create') }}
+            </x-primary-button>
+            <x-secondary-button type="reset">
+                {{ __('Reset') }}
+            </x-secondary-button>
+            <x-secondary-button href="{{ route('files.index') }}">
+                {{ __('Back to list') }}
+            </x-secondary-button>
+        </div>
+    </form>
     
-    <div class="mb-4">
-        <label for="upload" class="block text-gray-700 text-sm font-bold mb-2">File:</label>
-        <input type="file" name="upload" class="form-input w-full border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" />
-        <div id="file-upload-error" class="bg-red-500" ></div>
-    </div>
-    
-    <div class="flex justify-between">
-        <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="button">Create</button>
-        <button type="reset" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="button">Reset</button>
-    </div>
-</form>
-<a href="{{ url('/dashboard') }}" class="block mt-4 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg mx-auto">{{ __('Dashboard') }}</a>
+    <script>
+    document.getElementById("upload").addEventListener("change", (event) => {
+        let size = event.target.files[0].size
+        document.getElementById("filesize").innerHTML = Math.floor(size/1000)
+    })
+    </script>
 @endsection

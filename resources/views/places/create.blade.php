@@ -1,48 +1,46 @@
 @extends('layouts.app')
-@section("content")
-<form id="validacion-places" method="post" action="{{ route('places.store') }}" enctype="multipart/form-data" class="bg-white p-8 rounded shadow-md">
-    @csrf
-    
-    <div class="mb-4">
-        <label for="name">Nombre:</label>
-        <input type="text" id="name" name="name" >
-        <div id="name-error" class="error-message" style="display:none;color:red;"></div>
-        <br><br>
 
-        <label for="description">Descripción:</label><br>
-        <textarea id="description" name="description" rows="4" cols="50" ></textarea>
-        <div id="description-error" class="error-message" style="display:none;color:red;"></div>
-        <br><br>
+@section('box-title')
+    {{ __('Afegir lloc') }}
+@endsection
 
-        <label for="latitude">Latitud:</label>
-        <input type="number" id="latitude" name="latitude" step="any" >
-        <div id="latitude-error" class="error-message" style="display:none;color:red;"></div>
-        <br><br>
-
-        <label for="longitude">Longitud:</label>
-        <input type="number" id="longitude" name="longitude" step="any" >
-        <div id="longitude-error" class="error-message" style="display:none;color:red;"></div>
-        <br><br>
-
-        <label for="visibility_id">{{__('Visibility')}}:</label><br>
-        <select id="visibility_id" name="visibility_id" class="form-input w-full border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-            <option value="1">Public</option>
-            <option value="2">Contacts</option>
-            <option value="3">Private</option>
-        </select>
-        <div id="visibility_id-error" class="error-message" style="display:none;color:red;"></div>
-        <br>
-
-        <label for="upload">File:</label>
-        <input type="file" id="upload" name="upload" >
-        <div id="upload-error" class="error-message" style="display:none;color:red;"></div>
-        <br><br>
-    </div>
-
-    <div class="flex justify-between">
-        <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Create</button>
-        <button type="reset" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Reset</button>
-    </div>
-</form>
-<a href="{{ url('/dashboard') }}" class="block mt-4 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg mx-auto">{{ __('Dashboard') }}</a>
+@section('box-content')
+    <form method="POST" action="{{ route('places.store') }}" enctype="multipart/form-data">
+        @csrf
+        <div>
+            <x-input-label for="name" :value="__('Name')" />
+            <x-text-input type="text" name="name" id="name" class="block mt-1 w-full" :value="old('name')" />
+        </div>
+        <div>
+            <x-input-label for="description" :value="__('Description')" />
+            <x-textarea name="description" id="description" class="block mt-1 w-full" :value="old('description')" />
+        </div>
+        <div>
+            <x-input-label for="address" :value="__('address')" />
+            <x-textarea name="address" id="address" class="block mt-1 w-full" :value="old('address')" />
+        </div>
+        <div>
+            <x-input-label for="upload" :value="__('Upload')" />
+            <x-text-input type="file" name="upload" id="upload" class="block mt-1 w-full" :value="old('upload')" />
+        </div>
+        <div>
+            <x-input-label for="latitude" :value="__('Latitude')" />
+            <x-text-input type="text" name="latitude" id="latitude" class="block mt-1 w-full" value="41.2310371" />
+        </div>
+        <div>
+            <x-input-label for="longitude" :value="__('Longitude')" />
+            <x-text-input type="text" name="longitude" id="longitude" class="block mt-1 w-full" value="1.7282036" />
+        </div>
+        <div class="mt-8">
+            <x-primary-button>
+                {{ __('Create') }}
+            </x-primary-button>
+            <x-secondary-button type="reset">
+                {{ __('Reset') }}
+            </x-secondary-button>
+            <a href="{{ url('dashboard') }}"><x-secondary-button>
+            {{ __('Back to dashboard') }}
+        </x-secondary-button></a>
+        </div>
+    </form>
 @endsection

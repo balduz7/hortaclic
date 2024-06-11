@@ -12,12 +12,10 @@ class Post extends Model
     use HasFactory;
 
     protected $fillable = [
-        'body',
+        'post_name',
+        'content',
         'file_id',
-        'latitude',
-        'longitude',
         'author_id',
-        'visibility_id'
     ];
 
     public function file(){
@@ -33,10 +31,26 @@ class Post extends Model
         return $this->belongsToMany(User::class, 'likes');
     }
 
-    public function visibility()
+    public function likedByUser(User $user)
+    {
+        $count = Like::where([
+            ['user_id',  '=', $user->id],
+            ['post_id', '=', $this->id],
+        ])->count();
+        
+        return $count > 0;
+    }
+
+    public function likedByAuthUser()
+    {
+        $user = auth()->user();
+        return $this->likedByUser($user);
+    }
+
+    /*public function visibility()
     {
         return $this->belongsTo(Visibility::class);
-    }
+    }*/
 
    /* public function comments()
     {

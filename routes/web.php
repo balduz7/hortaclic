@@ -36,8 +36,27 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::get('mail/test', [MailController::class, 'test']);
-Route::resource('files', FileController::class)->middleware(['auth', 'role.any:2,3']);
-Route::resource('posts', PostController::class)->middleware(['auth', 'role.any:2,3']);
-Route::resource('places', PlaceController::class)->middleware(['auth', 'role.any:2,3']);
 
 require __DIR__.'/auth.php';
+
+Route::resource('files', FileController::class)->middleware(['auth']);
+Route::get('files/{file}/delete', [FileController::class, 'delete'])->name('files.delete')->middleware(['auth']);
+
+Route::resource('posts', PostController::class)->middleware(['auth']);
+
+Route::controller(PostController::class)->group(function () {
+    Route::get('posts/{post}/delete', 'delete')->name('posts.delete');
+    Route::post('/posts/{post}/likes', 'like')->name('posts.like');
+    Route::delete('/posts/{post}/likes', 'unlike')->name('posts.unlike');
+});
+
+Route::resource('places', PlaceController::class)->middleware(['auth']);
+
+Route::controller(PlaceController::class)->group(function () {
+    Route::get('places/{place}/delete', 'delete')->name('places.delete');
+    Route::post('/places/{place}/favs', 'favorite')->name('places.favorite');
+    Route::delete('/places/{place}/favs', 'unfavorite')->name('places.unfavorite');
+});
+
+
+

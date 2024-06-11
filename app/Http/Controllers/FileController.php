@@ -141,4 +141,11 @@ class FileController extends Controller
         $file->delete();
         return redirect()->route('files.index')->with('success', 'File was removed!');
     }
+
+    public function delete(File $file)
+    {
+        return view("files.delete", [
+            'file' => $file
+        ]);
+    }
 }

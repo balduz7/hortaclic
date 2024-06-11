@@ -16,16 +16,12 @@ class PlaceController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function __construct()
-    {
-        $this->authorizeResource(Place::class,'place');
-    }
+
     public function index(Request $request)
     {
         if ($request->has('search')) {
             $searchTerm = $request->input('search');
-   
-            // Realizar la búsqueda en la base de datos
+  
             $places = Place::withCount('favorited')
             ->where('name', 'like', "%$searchTerm%")
             ->paginate(5);
@@ -53,58 +49,49 @@ class PlaceController extends Controller
      */
     public function store(Request $request)
     {
-        // Validar fitxer
+        // Validar dades del formulari
         $validatedData = $request->validate([
-            'upload' => 'required|mimes:gif,jpeg,jpg,png|max:1024',
-            'name' => 'required',
+            'name'        => 'required',
             'description' => 'required',
-            'latitude' => 'required|numeric',
-            'longitude' => 'required|numeric',
+            'address'     => 'required',
+            'upload'      => 'required|mimes:gif,jpeg,jpg,png,mp4|max:2048',
+            'latitude'    => 'required',
+            'longitude'   => 'required',
         ]);
-       
-        // Obtenir dades del fitxer
-        $upload = $request->file('upload');
-        $fileName = $upload->getClientOriginalName();
-        $fileSize = $upload->getSize();
-        Log::debug("Storing file '{$fileName}' ($fileSize)...");
- 
- 
-        // Pujar fitxer al disc dur
-        $uploadName = time() . '_' . $fileName;
-        $filePath = $upload->storeAs(
-            'uploads',      // Path
-            $uploadName ,   // Filename
-            'public'        // Disk
-        );
-       
-        if (Storage::disk('public')->exists($filePath)) {
-            Log::debug("Disk storage OK");
-            $fullPath = Storage::disk('public')->path($filePath);
-            Log::debug("File saved at {$fullPath}");
+        
+        // Obtenir dades del formulari
+        $name        = $request->get('name');
+        $description = $request->get('description');
+        $address = $request->get('address');
+        $upload      = $request->file('upload');
+        $latitude    = $request->get('latitude');
+        $longitude   = $request->get('longitude');
+
+        // Desar fitxer al disc i inserir dades a BD
+        $file = new File();
+        $fileOk = $file->diskSave($upload);
+
+        if ($fileOk) {
             // Desar dades a BD
-            $file = File::create([
-                'filepath' => $filePath,
-                'filesize' => $fileSize,
-            ]);
-            Log::debug("DB storage OK");
-            // Patró PRG amb missatge d'èxit
+            Log::debug("Saving place at DB...");
             $place = Place::create([
-                'name' =>$request->name,
-                'description' =>$request->description,
-                'file_id' =>$file->id,
-                'latitude' =>$request->latitude,
-                'longitude' =>$request->longitude,
-                'visibility_id'=>$request->visibility_id,
-                'author_id' =>auth()->user()->id,
+                'name'        => $name,
+                'description' => $description,
+                'address'     => $address,
+                'file_id'     => $file->id,
+                'latitude'    => $latitude,
+                'longitude'   => $longitude,
+                'author_id'   => auth()->user()->id,
             ]);
-            Log::debug("DB Storage OK");
+            \Log::debug("DB storage OK");
+            // Patró PRG amb missatge d'èxit
             return redirect()->route('places.show', $place)
-                ->with('success',__('Place guardat correctament'));
+                ->with('success', __('Place successfully saved'));
         } else {
-            Log::debug("Disk storage FAILS");
+            \Log::debug("Disk storage FAILS");
             // Patró PRG amb missatge d'error
             return redirect()->route("places.create")
-                ->with('error', __('ERROR actualitzat el place'));
+                ->with('error', __('ERROR Uploading file'));
         }
     }
 
@@ -115,15 +102,19 @@ class PlaceController extends Controller
     public function show(Place $place)
     {
         //
-        $place->loadCount('favorited');
+        
 
         if (Storage::disk('public')->exists($place->file->filepath)) {
+            $place->loadCount('favorited');
             return view("places.show", [
-                "place" => $place
+                'place'   => $place,
+                'file'    => $place->file,
+                'author'  => $place->user,
+                'numFavs' => $place->favorited_count,
             ]);
         } else {
             return redirect()->route("places.index")
-                ->with('error', __('ERROR falta l\'arxiu'));
+                ->with('error', __('Erro: falta l\'arxiu'));
         }; 
     }
 
@@ -134,7 +125,9 @@ class PlaceController extends Controller
     {
         //
         return view("places.edit", [
-            "place" => $place
+            'place'  => $place,
+            'file'   => $place->file,
+            'author' => $place->user,
         ]);
     }
 
@@ -148,13 +141,11 @@ class PlaceController extends Controller
         'upload' => 'required|mimes:gif,jpeg,jpg,png|max:1024'
     ]);
 
-    // Obtenir dades del fitxer
     $upload = $request->file('upload');
     $fileName = $upload->getClientOriginalName();
     $fileSize = $upload->getSize();
     Log::debug("Storing file '{$fileName}' ($fileSize)...");
 
-    // Pujar fitxer al disc dur
     $uploadName = time() . '_' . $fileName;
     $filePath = $upload->storeAs(
         'uploads',      // Path
@@ -166,12 +157,11 @@ class PlaceController extends Controller
         Log::debug("Local storage OK");
         $fullPath = Storage::disk('public')->path($filePath);
         Log::debug("File saved at {$fullPath}");
-        // Desar dades a BD
+
         $place->file->filepath=$filePath;
         $place->file->filesize=$fileSize;
         $place->file->save();
         Log::debug("DB storage OK");
-        // Patró PRG amb missatge d'èxit
 
         $place->name = $request->name;
         $place->description = $request->description;
@@ -185,7 +175,7 @@ class PlaceController extends Controller
             ->with('success', __('Place actualitzat correctament'));
     } else {
         Log::debug("Local storage FAILS");
-        // Patró PRG amb missatge d'error
+
         return redirect()->route("places.edit")
             ->with('error', __('Place Error actualització'));
     }
@@ -203,21 +193,36 @@ class PlaceController extends Controller
         $place->file->delete();
         return redirect()->route("places.index")->with('success', __('Place eliminat correctament'));
     }
-  
-    public function favorite (Request $request, Place $place){
-        $favorite = Favorite::where('user_id',auth()->user()->id)->where('place_id', $place->id )->first();
-        if($favorite){
-            $favorite->delete();
-            Log::debug("Fav eliminado");
-            return redirect()->route("places.index");
-        } else {
-            $favorite = Favorite::create([
-                'user_id' => auth()->user()->id,
-                'place_id' => $place->id,
-            ]);
-            return redirect()->back();
-            Log::debug("Fav creat");
-        }
 
+    public function delete(Place $place)
+    {
+        
+        return view("places.delete", [
+            'place' => $place
+        ]);
+    }
+
+    public function favorite(Place $place) 
+    {
+        $fav = Favorite::create([
+            'user_id'  => auth()->user()->id,
+            'place_id' => $place->id
+        ]);
+
+        return redirect()->back()
+            ->with('success', __('Afegit a favorits'));
+    }
+
+    public function unfavorite(Place $place) 
+    {
+        $fav = Favorite::where([
+            ['user_id',  '=', auth()->user()->id],
+            ['place_id', '=', $place->id],
+        ])->first();
+        
+        $fav->delete();
+        
+        return redirect()->back()
+            ->with('success', __('Eliminat de favorits'));
     }
 }

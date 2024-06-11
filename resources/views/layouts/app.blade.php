@@ -11,24 +11,41 @@
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
-        <!-- Scripts -->
+        <!-- Styles and scripts -->
+        @env(['local','development'])
         @vite(['resources/css/app.css', 'resources/js/app.js'])
+        @endenv
+        @env(['production'])
+        @php
+        $manifest = json_decode(file_get_contents(public_path('build/manifest.json')), true);
+        @endphp
+        <link rel="stylesheet" href="{{ asset('build/'.$manifest['resources/css/app.css']['file']) }}">
+        <script type="module" src="{{ asset('build/'.$manifest['resources/js/app.js']['file'])
+
+        }}"></script>
+        @endenv
     </head>
     <body class="font-sans antialiased">
         <div class="min-h-screen bg-gray-100 dark:bg-gray-900">
             @include('layouts.navigation')
 
             <!-- Page Heading -->
-            @if (isset($header))
                 <header class="bg-white dark:bg-gray-800 shadow">
                     <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-                        {{ $header }}
+                    <h2 class="mb-4 text-4xl font-extrabold leading-none tracking-tight text-gray-900 md:text-5xl lg:text-6xl dark:text-white">
+                    @yield('box-title')
+                    </h2>
                     </div>
                 </header>
-            @endif
 
             <!-- Page Content -->
             <main>
+
+                <div class="bg-white dark:bg-gray-800 shadow">
+                    <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+                    @yield('box-content')
+                    </div>
+                </hdivr>
                 @include('partials.flash')
             </main>
         </div>
