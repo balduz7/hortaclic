@@ -24,7 +24,7 @@
                     <x-nav-link :href="route('places.index')" :active="request()->routeIs('places.*')">
                         {{ __('Llocs') }}
                     </x-nav-link>
-
+                    <x-language-switcher />
                 </div>
             </div>
 

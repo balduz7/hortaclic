@@ -4,10 +4,10 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Filament\Models\Contracts\FilamentUser;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class User extends Authenticatable implements FilamentUser
 {
@@ -52,14 +52,22 @@ class User extends Authenticatable implements FilamentUser
 
     public function canAccessFilament(): bool
     {
-        $roles = [Role::ADMIN, Role::EDITOR];
-        if ($this->relationLoaded('role')) {
-            Log::debug("User with role '{$this->role->name}' accessing Filament");
-            return in_array($this->role->id, $roles);
-        } else {
-            Log::debug("User accessing Filament, but role is not loaded");
-            return false;
-        }
+        return in_array($this->role_id, ['2', '3']);    
+    }
+
+    public function isAdmin()
+    {
+        return $this->role_id == Role::ADMIN;
+    }
+
+    public function isEditor()
+    {
+        return $this->role_id == Role::EDITOR;
+    }
+
+    public function isPublisher()
+    {
+        return $this->role_id == Role::AUTHOR;
     }
 
     public function posts(){

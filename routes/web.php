@@ -58,5 +58,5 @@ Route::controller(PlaceController::class)->group(function () {
     Route::delete('/places/{place}/favs', 'unfavorite')->name('places.unfavorite');
 });
 
-
+Route::get('/language/{locale}', [LanguageController::class, 'language'])->name('language');
 

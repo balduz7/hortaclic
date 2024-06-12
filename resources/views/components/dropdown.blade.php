@@ -21,6 +21,7 @@ switch ($width) {
 }
 @endphp
 
+<script src="//unpkg.com/alpinejs" defer></script>
 <div class="relative" x-data="{ open: false }" @click.outside="open = false" @close.stop="open = false">
     <div @click="open = ! open">
         {{ $trigger }}

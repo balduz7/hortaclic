@@ -4,9 +4,19 @@ namespace App\Http\Controllers;
 
 use App\Models\File;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class FileController extends Controller
 {
+
+
+    public function __construct()
+    {
+        // Se aplica la autorización de recursos para el modelo File.
+        $this->authorizeResource(File::class, 'file');
+    }
+
     /**
      * Display a listing of the resource.
      */

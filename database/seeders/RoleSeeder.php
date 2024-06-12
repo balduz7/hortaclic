@@ -4,21 +4,20 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 
+use App\Models\Role;
 
-//importaciones mias:
 class RoleSeeder extends Seeder
 {
     /**
      * Run the database seeds.
+     *
+     * @return void
      */
-    public function run(): void
+    public function run()
     {
-        DB::table('roles')->insert([
-            ['name' => 'author'],
-            ['name' => 'editor'],
-            ['name' => 'admin'],
-        ]);
+        Role::create(['id' => Role::AUTHOR, 'name' => 'author']);
+        Role::create(['id' => Role::EDITOR, 'name' => 'editor']);
+        Role::create(['id' => Role::ADMIN,  'name' => 'admin']);
     }
 }
