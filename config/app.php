@@ -83,7 +83,7 @@ return [
     |
     */
 
-    'locale' => 'ca',
+    //'locale' => 'ca',
 
     /*
     |--------------------------------------------------------------------------
@@ -96,10 +96,11 @@ return [
     |
     */
 
+    'locale' => 'ca',
     'fallback_locale' => 'en',
     'available_locales' => [
-        'ca' => 'Català',
         'es' => 'Castellano',
+        'ca' => 'Català',
         'en' => 'English',
     ],
 

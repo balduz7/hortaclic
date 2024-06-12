@@ -5,18 +5,17 @@
 @endsection
 
 @section('box-content')
-    <p class="mb-4">{{ __("You're logged in!") }}</p>
-    <h2 class="mb-4 text-4xl font-extrabold leading-none tracking-tight text-gray-900 md:text-5xl lg:text-6xl dark:text-white">{{ __('Recursos') }}</h2>
- 
-    <a href="{{ url('/files') }}"><x-primary-button>
-        🗄️ {{ __('Arxius') }}
-    </x-primary-button></a>
-    <a href="{{ url('/posts') }}"><x-primary-button >
-        📑 {{ __('Publicacions') }}        
-    </x-primary-button></a>
-
-    <a href="{{ url('/places') }}"><x-primary-button >
-        📍 {{ __('Llocs') }}
-    </x-primary-button></a>
+<div class="py-12">
+        <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
+            <div class="p-8 text-center rounded-lg">
+                <div class="flex justify-center space-x-6">
+                    <a href="{{ route('posts.index') }}"
+                        class="btn bg-white hover:bg-blue-700 text-blue py-3 px-6 rounded-full transition duration-300 ease-in-out">{{ __('Explore Posts') }}</a>
+                    <a href="{{ route('places.index') }}"
+                        class="btn bg-white hover:bg-blue-700 text-blue py-3 px-6 rounded-full transition duration-300 ease-in-out">{{ __('Discover Places') }}</a>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
 

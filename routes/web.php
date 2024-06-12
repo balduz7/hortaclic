@@ -29,6 +29,8 @@ Route::get('/dashboard', function (Request $request) {
     return view('dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
+Route::get('/language/{locale}', [LanguageController::class, 'language'])->name('language');
+
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -57,6 +59,4 @@ Route::controller(PlaceController::class)->group(function () {
     Route::post('/places/{place}/favs', 'favorite')->name('places.favorite');
     Route::delete('/places/{place}/favs', 'unfavorite')->name('places.unfavorite');
 });
-
-Route::get('/language/{locale}', [LanguageController::class, 'language'])->name('language');
 
