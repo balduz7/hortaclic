@@ -20,6 +20,7 @@ return new class extends Migration
             $table->float('longitude');
             $table->foreignId('file_id');
             $table->foreignId('author_id');
+            //$table->foreign('visibility_id')->references('id')->on('visibilities')->onDelete('cascade');
             $table->foreign('file_id')->references('id')->on('files')->onDelete('cascade');
             $table->foreign('author_id')->references('id')->on('users')->onDelete('cascade');
             $table->timestamps();

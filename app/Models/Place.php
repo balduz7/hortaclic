@@ -54,11 +54,12 @@ class Place extends Model
         $user = auth()->user();
         return $this->favoritedByUser($user);
     }
-    /*public function visibility()
+    public function visibility()
     {
         return $this->belongsTo(visibility::class);
     }
-    public function reviews()
+
+    /*public function reviews()
     {
         return $this->hasMany(Review::class);
     }*/

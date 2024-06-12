@@ -16,6 +16,7 @@ class Post extends Model
         'content',
         'file_id',
         'author_id',
+        'visibility_id',
     ];
 
     public function file(){
@@ -47,10 +48,10 @@ class Post extends Model
         return $this->likedByUser($user);
     }
 
-    /*public function visibility()
+    public function visibility()
     {
         return $this->belongsTo(Visibility::class);
-    }*/
+    }
 
    /* public function comments()
     {

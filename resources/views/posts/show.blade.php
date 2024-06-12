@@ -27,6 +27,10 @@
                     <td>{{ $post->author_id }}</td>
                 </tr>
                 <tr>
+                    <td><strong>Visibility</strong></td>
+                    <td>{{ $post->visibility_id }}</td>
+                </tr>
+                <tr>
                     <td><strong>Created</strong></td>
                     <td>{{ $post->created_at }}</td>
                 </tr>

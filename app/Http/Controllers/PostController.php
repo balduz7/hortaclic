@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Post;
 use App\Models\File;
 use App\Models\Like;
+use App\Models\Visibility;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
@@ -62,7 +63,8 @@ class PostController extends Controller
      */
     public function create()
     {
-        return view("posts.create");
+        $visibilities = Visibility::all();
+        return view("posts.create", compact('visibilities'));
     }
 
     /**
@@ -70,39 +72,58 @@ class PostController extends Controller
      */
     public function store(Request $request)
     {
-        // Validar dades del formulari
+        // Validar fitxer
+        
         $validatedData = $request->validate([
-            'name'      => 'required',
-            'content'   => 'required',
-            'upload'    => 'required|mimes:gif,jpeg,jpg,png,mp4|max:2048',
+            'name' => 'required|max:20',
+            'content' => 'required|max:150',
+            'upload' => 'required|mimes:gif,jpeg,jpg,png|max:1024',
+            'visibility_id' => 'required|exists:visibilities,id',
         ]);
         
-        // Obtenir dades del formulari
-        $name          = $request->get('name');
-        $content       = $request->get('content');
-        $upload        = $request->file('upload');
-
-        // Desar fitxer al disc i inserir dades a BD
-        $file = new File();
-        $fileOk = $file->diskSave($upload);
-
-        if ($fileOk) {
+       
+        // Obtenir dades del fitxer
+        $upload = $request->file('upload');
+        $fileName = $upload->getClientOriginalName();
+        $fileSize = $upload->getSize();
+        \Log::debug("Storing file '{$fileName}' ($fileSize)...");
+ 
+ 
+        // Pujar fitxer al disc dur
+        $uploadName = time() . '_' . $fileName;
+        $filePath = $upload->storeAs(
+            'uploads',      // Path
+            $uploadName ,   // Filename
+            'public'        // Disk
+        );
+       
+        if (\Storage::disk('public')->exists($filePath)) {
+            \Log::debug("Disk storage OK");
+            $fullPath = \Storage::disk('public')->path($filePath);
+            \Log::debug("File saved at {$fullPath}");
             // Desar dades a BD
-            Log::debug("Saving post at DB...");
-            $post = Post::create([
-                'post_name' => $name,
-                'content'   => $content,
-                'file_id'   => $file->id,
-                'author_id' => auth()->user()->id,
+            $file = File::create([
+                'filepath' => $filePath,
+                'filesize' => $fileSize,
             ]);
-            Log::debug("DB storage OK");
+            \Log::debug('Visibility ID from form: ' . $request->visibility_id);
+            // Create del registro post
+            $post = Post::create([
+                'post_name' => $request->name,
+                'content' => $request->content,
+                'author_id' => $user = auth()->user()->id,
+                'file_id' => $file->id,
+                'visibility_id' => $request->visibility_id,
+                ]);                
+            \Log::debug("DB storage OK");
             // Patró PRG amb missatge d'èxit
-            return redirect()->route('posts.show', $post)
-                ->with('success', __('Post successfully saved'));
+            return redirect()->route('posts.index')
+                ->with('success', __('Post saved successfully'));
         } else {
+            \Log::debug("Disk storage FAILS");
             // Patró PRG amb missatge d'error
-            return redirect()->route("posts.create")
-                ->with('error', __('ERROR Uploading file'));
+            return redirect()->route("files.create")
+                ->with('error', __('Error uploading post'));
         }
     }
 
@@ -134,11 +155,8 @@ class PostController extends Controller
      */
     public function edit(Post $post)
     {
-        return view("posts.edit", [
-            'post'   => $post,
-            'file'   => $post->file,
-            'author' => $post->user,
-        ]);
+        $visibilities = Visibility::all();
+        return view('posts.edit', compact('post','visibilities'));
     }
 
     /**
@@ -146,33 +164,39 @@ class PostController extends Controller
      */
     public function update(Request $request, Post $post)
     {
-        $validatedData = $request->validate([
-            'name'      => 'required',
-            'content'   => 'required',
-            'upload'    => 'required|mimes:gif,jpeg,jpg,png,mp4|max:2048',
+        // Validar los datos del formulario
+        $request->validate([
+            'upload' => 'mimes:gif,jpeg,jpg,png|max:1024',
+            'name' => 'required|max:20',
+            'content' => 'required|max:150',
+            'visibility' => 'required|exists:visibilities,id',
+        ]);
+        // Comprueba si se ha enviado un nuevo archivo
+        if ($request->hasFile('upload')) {
+            // Elimina el archivo anterior del disco
+            Storage::disk('public')->delete($post->file->filepath);
+    
+            // Sube el nuevo archivo al disco
+            $newFile = $request->file('upload');
+            $newFileName = time() . '_' . $newFile->getClientOriginalName();
+            $newFilePath = $newFile->storeAs('uploads', $newFileName, 'public');
+            // Actualiza la información del archivo en la base de datos
+            $post->file->update([
+                'original_name' => $newFile->getClientOriginalName(),
+                'filesize' => $newFile->getSize(),
+                'filepath' => $newFilePath,
+            ]);
+        }
+
+        $post->update([
+            'post_name' => $request->name,
+            'content' => $request->content,
+            'updated_at' => now(),
+            'visibility_id' => $request->visibility,
         ]);
 
-        // Obtenir dades del formulari
-        $name          = $request->get('name');
-        $content       = $request->get('content');
-        $upload        = $request->file('upload');
-
-        // Desar fitxer (opcional)
-        if (is_null($upload) || $post->file->diskSave($upload)) {
-            // Actualitzar dades a BD
-            Log::debug("Updating DB...");
-            $post->post_name      = $name;
-            $post->content  = $content;
-            $post->save();
-            Log::debug("DB storage OK");
-            // Patró PRG amb missatge d'èxit
-            return redirect()->route('posts.show', $post)
-                ->with('success', __('Post successfully saved'));
-        } else {
-            // Patró PRG amb missatge d'error
-            return redirect()->route("posts.edit")
-                ->with('error', __('ERROR Uploading file'));
-        }
+    
+        return redirect()->route('posts.show', $post)->with('success', __('Successfully modified post'));
                       
            
     }

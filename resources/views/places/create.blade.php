@@ -31,6 +31,15 @@
             <x-input-label for="longitude" :value="__('Longitude')" />
             <x-text-input type="text" name="longitude" id="longitude" class="block mt-1 w-full" value="1.7282036" />
         </div>
+        <div>
+            <x-input-label for="visibility" :value="__('Visibility')" />
+                <select name="visibility" id="visibility" class="mt-1 p-2 w-full border rounded-md">
+                    @foreach($visibilities as $visibility)
+                        <option value="{{ $visibility->id }}">{{ __($visibility->name)  }}</option>
+                    @endforeach
+                </select>
+                <span id="error-visibility" class="text-red-500"></span>
+        </div>
         <div class="mt-8">
             <x-primary-button>
                 {{ __('Create') }}

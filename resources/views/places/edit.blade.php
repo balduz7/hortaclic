@@ -6,11 +6,10 @@
 
 @section('box-content')
 <div>
-        <img class="w-full" src="{{ asset('storage/'.$file->filepath) }}" title="Image preview"/>
         <form method="POST" action="{{ route('places.update', $place) }}" enctype="multipart/form-data">
             @csrf
             @method("PUT")
-        <div>
+        <<div>
             <x-input-label for="name" :value="__('Name')" />
             <x-text-input type="text" name="name" id="name" class="block mt-1 w-full" :value="old('name')" />
         </div>
@@ -33,6 +32,15 @@
         <div>
             <x-input-label for="longitude" :value="__('Longitude')" />
             <x-text-input type="text" name="longitude" id="longitude" class="block mt-1 w-full" value="1.7282036" />
+        </div>
+        <div>
+            <x-input-label for="visibility" :value="__('Visibility')" />
+                <select name="visibility" id="visibility" class="mt-1 p-2 w-full border rounded-md">
+                    @foreach($visibilities as $visibility)
+                        <option value="{{ $visibility->id }}">{{ __($visibility->name)  }}</option>
+                    @endforeach
+                </select>
+                <span id="error-visibility" class="text-red-500"></span>
         </div>
             <div class="mt-8">
                 <x-primary-button>

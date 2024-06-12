@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\File;
 use App\Models\Place;
 use App\Models\Favorite;
+use App\Models\Visibility;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
@@ -41,7 +42,8 @@ class PlaceController extends Controller
      */
     public function create()
     {
-        return view("places.create");
+        $visibilities = Visibility::all();
+        return view("places.create", compact('visibilities'));
     }
 
     /**
@@ -49,49 +51,47 @@ class PlaceController extends Controller
      */
     public function store(Request $request)
     {
-        // Validar dades del formulari
         $validatedData = $request->validate([
-            'name'        => 'required',
-            'description' => 'required',
-            'address'     => 'required',
-            'upload'      => 'required|mimes:gif,jpeg,jpg,png,mp4|max:2048',
-            'latitude'    => 'required',
-            'longitude'   => 'required',
+            'name' => 'required|max:255',
+            'address' => 'required|max:255',
+            'description' => 'required|max:255',
+            'latitude' => 'required',
+            'longitude' => 'required',
+            'upload' => 'required|mimes:gif,jpeg,jpg,png|max:1024',
+            'visibility' => 'required|exists:visibilities,id',
         ]);
-        
-        // Obtenir dades del formulari
-        $name        = $request->get('name');
-        $description = $request->get('description');
-        $address = $request->get('address');
-        $upload      = $request->file('upload');
-        $latitude    = $request->get('latitude');
-        $longitude   = $request->get('longitude');
 
-        // Desar fitxer al disc i inserir dades a BD
-        $file = new File();
-        $fileOk = $file->diskSave($upload);
+        $upload = $request->file('upload');
+        $fileName = $upload->getClientOriginalName();
+        $fileSize = $upload->getSize();
 
-        if ($fileOk) {
-            // Desar dades a BD
-            Log::debug("Saving place at DB...");
-            $place = Place::create([
-                'name'        => $name,
-                'description' => $description,
-                'address'     => $address,
-                'file_id'     => $file->id,
-                'latitude'    => $latitude,
-                'longitude'   => $longitude,
-                'author_id'   => auth()->user()->id,
+        $uploadName = time() . '_' . $fileName;
+        $filePath = $upload->storeAs('uploads', $uploadName, 'public');
+
+        if (Storage::disk('public')->exists($filePath)) {
+            $fullPath = Storage::disk('public')->path($filePath);
+
+            $file = File::create([
+                'filepath' => $filePath,
+                'filesize' => $fileSize,
             ]);
-            \Log::debug("DB storage OK");
-            // Patró PRG amb missatge d'èxit
-            return redirect()->route('places.show', $place)
-                ->with('success', __('Place successfully saved'));
+
+            $place = Place::create([
+                'name' => $request->name,
+                'description' => $request->description,
+                'address' => $request->address,
+                'latitude' => $request->latitude,
+                'longitude' => $request->longitude,
+                'author_id' => auth()->user()->id,
+                'file_id' => $file->id,
+                'visibility_id' => $request->visibility,
+            ]);
+
+            return redirect()->route('places.index')
+                ->with('success', __('Location successfully saved'));
         } else {
-            \Log::debug("Disk storage FAILS");
-            // Patró PRG amb missatge d'error
-            return redirect()->route("places.create")
-                ->with('error', __('ERROR Uploading file'));
+            return redirect()->route('files.create')
+                ->with('error', __('Error uploading place'));
         }
     }
 
@@ -124,11 +124,8 @@ class PlaceController extends Controller
     public function edit(Place $place)
     {
         //
-        return view("places.edit", [
-            'place'  => $place,
-            'file'   => $place->file,
-            'author' => $place->user,
-        ]);
+        $visibilities = Visibility::all();
+        return view('places.edit', compact('place','visibilities'));
     }
 
     /**
@@ -136,49 +133,39 @@ class PlaceController extends Controller
      */
     public function update(Request $request, Place $place)
     {
-       // Validar fitxer
-       $validatedData = $request->validate([
-        'upload' => 'required|mimes:gif,jpeg,jpg,png|max:1024'
-    ]);
+        $request->validate([
+            'upload' => 'mimes:gif,jpeg,jpg,png|max:1024',
+            'name' => 'required|max:255',
+            'description' => 'required|max:255',
+            'latitude' => 'required',
+            'longitude' => 'required',
+            'visibility' => 'required|exists:visibilities,id',
+        ]);
 
-    $upload = $request->file('upload');
-    $fileName = $upload->getClientOriginalName();
-    $fileSize = $upload->getSize();
-    Log::debug("Storing file '{$fileName}' ($fileSize)...");
+        if ($request->hasFile('upload')) {
+            Storage::disk('public')->delete($place->file->filepath);
 
-    $uploadName = time() . '_' . $fileName;
-    $filePath = $upload->storeAs(
-        'uploads',      // Path
-        $uploadName ,   // Filename
-        'public'        // Disk
-    );
-    if (Storage::disk('public')->exists($filePath)) {
-        Storage::disk('public')->delete($place->file->filepath);
-        Log::debug("Local storage OK");
-        $fullPath = Storage::disk('public')->path($filePath);
-        Log::debug("File saved at {$fullPath}");
+            $newFile = $request->file('upload');
+            $newFileName = time() . '_' . $newFile->getClientOriginalName();
+            $newFilePath = $newFile->storeAs('uploads', $newFileName, 'public');
 
-        $place->file->filepath=$filePath;
-        $place->file->filesize=$fileSize;
-        $place->file->save();
-        Log::debug("DB storage OK");
+            $place->file->update([
+                'original_name' => $newFile->getClientOriginalName(),
+                'filesize' => $newFile->getSize(),
+                'filepath' => $newFilePath,
+            ]);
+        }
 
-        $place->name = $request->name;
-        $place->description = $request->description;
-        $place->longitude = $request->longitude;
-        $place->latitude = $request->latitude;
+        $place->update([
+            'name' => $request->name,
+            'description' => $request->description,
+            'latitude' => $request->latitude,
+            'longitude' => $request->longitude,
+            'updated_at' => now(),
+            'visibility_id' => $request->visibility,
+        ]);
 
-        $place->save();
-
-    
-        return redirect()->route('places.show', $place)
-            ->with('success', __('Place actualitzat correctament'));
-    } else {
-        Log::debug("Local storage FAILS");
-
-        return redirect()->route("places.edit")
-            ->with('error', __('Place Error actualització'));
-    }
+        return redirect()->route('places.show', $place)->with('success', __('Successfully modified location'));
                       
            
     }

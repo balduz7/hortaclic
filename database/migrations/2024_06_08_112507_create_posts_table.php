@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('post_name', 256);
             $table->text('content', 16384);
             $table->timestamps();
+            //$table->foreign('visibility_id')->references('id')->on('visibilities')->onDelete('cascade');
             $table->foreign('author_id')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('file_id')->references('id')->on('files')->onDelete('cascade');
         });

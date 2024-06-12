@@ -19,6 +19,15 @@
             <x-input-label for="upload" :value="__('Upload')" />
             <x-text-input type="file" name="upload" id="upload" class="block mt-1 w-full" :value="old('upload')" />
         </div>
+        <div>
+            <x-input-label for="visibility" :value="__('Visibility')" />
+                <select name="visibility_id" id="visibility" class="mt-1 p-2 w-full border rounded-md">
+                    @foreach($visibilities as $visibility)
+                        <option value="{{ $visibility->id }}">{{ __($visibility->name)  }}</option>
+                    @endforeach
+                </select>
+                <span id="error-visibility" class="text-red-500"></span>
+            </div>
         <div class="mt-8">
             <x-primary-button>
                 {{ __('Create') }}
